@@ -21,7 +21,7 @@ Your program should output:
 4 1,2,3
 5 4,3,1
 
-Assumption is made that the following file is in the same directory as the test.py
+Assumption is made that the following file is in the same directory as the small_world_test.py
 
 in_data.txt
 -------------

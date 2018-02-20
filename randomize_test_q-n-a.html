@@ -1,0 +1,278 @@
+<html>
+<head>
+<script>
+
+/*
+Here's a small problem that a client once asked us to solve as part of a larger project. The client has an existing web-based 
+system for delivering a test containing multiple choice questions to a learner (the relevant parts of which are included on this page).
+The client asked us to modify this code so that the test questions are delivered in a random order every time a learner attempts 
+the test. Furthermore, the order in which the answers to the questions are presented should also be randomized.
+
+The existing framework for creating and displaying a test has been provided for you below. Your task is to comprehend the client's 
+code and data structure then implement the RandomizeTest function to perform the randomization of the question and answer order.
+Please explain your work and thought process.
+
+Some background on the project from the client that may affect your solution:
+
+-There are over 600 of these tests deployed to hundreds of thousands of users
+-There are never more then 20 questions or so per test, each with no more than 6 answers but the code should be able to handle an
+ arbitrary number or both questions and answers
+-This code is maintained by several developers in different organizations
+-The code is only required to work in all modern browsers
+
+When submitting your response, please rename this file to include your name.
+
+If you have any questions, please do not hesitate to ask.
+*/
+
+
+/***************************************************************/
+//***Your code to randomize questions and answers goes here***//
+/**************************************************************/
+
+//definition of the test object
+function Test(aryQuestions, aryChoices, aryAnswers){
+	this.questions = aryQuestions;
+	this.choices = aryChoices;
+	this.answers = aryAnswers;
+}
+
+//definition of the testQuestion object
+function TestQuestion (questionText, choices, answers) {
+	this.questionText = questionText;
+	this.choices = choices;
+	this.answers = answers;
+	
+}
+
+/*
+ * This method randomizes the Test questions as well as randomizes 
+ * the choices and answers.
+ * 
+ * The randomization algorithm used is Fisher-Yates
+ * more information about this algorithm can be found at:
+ * 
+ * https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
+ *
+ * In this particular implementation of the algorithm, we had to 
+ * nest the shuffle in order to randomize the parallel arrays (answer and choice) 
+ * @param {Array} questionList List of test questions
+ * @return{Test} retuns a randomized Test object 
+ */
+function mixEmUp(questionList) 
+{
+	var aryQuestionText = []
+	var aryAnswers = []
+	var aryChoices =[]
+	
+	// list of questions
+	for (var i = 0; i < questionList.length; i++) 
+	{			
+		// shuffle choices and answers with in list
+		for(x = 0; x <questionList[i].choices.length; x++)
+		{
+			
+			var y = x + Math.floor(Math.random() * (questionList[i].choices.length - x));
+			
+			// randomize choices 
+			var temp = questionList[i].choices[y];
+			questionList[i].choices[y] = questionList[i].choices[x];
+			questionList[i].choices[x] = temp;
+			
+			// randomize answers
+			var temp = questionList[i].answers[y];
+			questionList[i].answers[y] = questionList[i].answers[x];
+			questionList[i].answers[x] = temp;
+		}
+		
+		// shuffle list of questions
+		var j = i + Math.floor(Math.random() * (questionList.length - i));
+		var temp = questionList[j];
+		questionList[j] = questionList[i];
+		questionList[i] = temp;
+		
+		aryQuestionText.push( questionList[i].questionText);
+		aryAnswers.push(questionList[i].answers);
+		aryChoices.push(questionList[i].choices);
+	}
+	
+	return new Test(aryQuestionText, aryChoices, aryAnswers); 
+
+}
+	
+	/*
+	 *  Creates a list of TestQuestion objects based on and does some minor data validation. 
+	 * @param {Array} aryQuestionText 
+	 * @param {Array} aryChoices
+	 * @param {Array} aryAnswers
+	 * @return{Array} retuns a list of TestQuestion objects
+	*/
+	
+	function testObjToList(tstObj)
+	{
+	
+		var questionList=[];
+		
+		for (x = 0; x < tstObj.questions.length; x++)
+		{
+			/* A quick check to make sure that the tstObj.answers and tstObj.choices 
+			have the same number of elements.
+			
+			If the two arrays are not the same size we clearly have a data problem.  
+			For this example I am going to simply exlude the 
+			question from the list if the data is in the wrong format. 
+			
+			Prayerfully data integrity is not soley left up to the front end, but you can never
+			be too safe. 
+			
+			We can write up a JIRA ticket and get the effort scoped (HA HA HA) 
+			*/
+					
+			if (tstObj.choices[x].length != tstObj.answers[x].length)
+			{
+				console.log("DATA_ERROR:\nQuestion:"+ tstObj.questions[x]
+				+ "\n contains [" +tstObj.choices[x].length +"] choices:\n" 
+				+ JSON.stringify(tstObj.choices[x]) 
+				+"\n and contains ["+tstObj.answers[x].length +"] answers:\n" 
+				+ JSON.stringify(tstObj.answers[x])
+				+ "\nplease validate data and ensure the number of choices is equal to the number of answers");
+				continue;
+			}
+			
+			questionList.push(new TestQuestion(tstObj.questions[x], tstObj.choices[x], tstObj.answers[x]));
+		}
+		return questionList;
+	}
+
+/*
+RandomizeTest accepts and returns a Test object. The questions in the returned object should be in a random order.
+The order of the choices within each question should also be randomized.
+*/
+
+function RandomizeTest(tstObject){
+	
+	questionList = testObjToList(tstObject);
+	
+	return mixEmUp(questionList);
+}
+
+
+/**********************************************************/
+//***End randomization code section***//
+/**********************************************************/
+
+//displays the sample test in the browser with the correct answer highlighted
+function WriteTest() {
+
+	var tst = CreateSampleTest();
+	
+	tst = RandomizeTest(tst);
+	
+	document.write("<table border=0 cellspacing=3 cellpadding=3><form name=test id=test>");
+	
+	for (i=0; i < tst.questions.length; i++) {
+	
+		document.write("<tr><td valign=top>&nbsp;</td>")
+
+		document.write("<td><p>" + (i+1) + ".&nbsp;" + tst.questions[i]);
+		
+		for (j=0; j < tst.choices[i].length; j++) {
+			
+			var correctcount = 0;
+			var setblue = "";
+			
+			for (k=0; k<tst.answers[i].length; k++) {
+				if (tst.answers[i][k] == 1) {
+					correctcount++;
+				}
+			}
+			
+			if (tst.answers[i][j] == 1) {
+				setblue="class=blue"
+			}
+			
+			if (correctcount == 1) {
+				document.write("<br><input type=radio name=check"+i+" value="+j+" onclick='return false;'>");
+				document.write("<span "+setblue+">"+tst.choices[i][j]+"</span>");
+			} 
+			
+			else {
+				document.write("<br><input type=checkbox name=check"+i+" value="+j+" onclick='return false;'>");
+				document.write("<span "+setblue+">"+tst.choices[i][j]+"</span>");
+			}
+		}
+		
+		document.write("</td></tr><tr><td colspan=2><br></td></tr>");
+	}
+	document.write('</form></table>');
+}
+
+
+
+function CreateSampleTest(){
+
+	var questions = [
+		"What can you find in Rustici Software's office?",
+		"All of Rustici Software employees are expected to work no more than ____ hours per week.",
+		"The end users of Rustici Software's products number in the _________",
+		"Rustici Software is a (choose all that apply):",
+		"Tim likes to wear:"
+	];
+
+	var choices = [
+		[
+			"Dart Board",
+			"Ping Pong Table",
+			"Cubicles",
+			"Laptops with dual monitors",
+			"TPS reports, ummm yeah"
+		],
+		[
+			"80",
+			"40",
+			"50",
+			"60"
+		],
+		[
+			"Tens",
+			"Hundreds",
+			"Thousands",
+			"Millions",
+			"Billions"
+		],
+		[
+			"Great place to work",
+			"Respected leader in its field",
+			"Place where people don't matter, just results"
+		],
+		[
+			"Capri pants",
+			"Goth attire",
+			"Sport coat",
+			"T-shirt and shorts"
+		]
+	];
+
+	var answers = [
+		[1,1,0,1,0],
+		[0,1,0,0],
+		[0,0,0,1,0],
+		[1,1,0],
+		[0,0,0,1,0]
+	];	
+	
+	return new Test(questions, choices, answers);
+}
+
+
+</script>
+<style type="text/css">
+.blue {font-size : 14px; font-family : arial, helvetica, sans-serif; color : #336897; font-weight:bold;}
+</style>
+</head>
+<body>
+<script>
+WriteTest();
+</script>
+</body>
+</html>

@@ -68,7 +68,5 @@ def process_dict(data_dict):
         point_id_str = point_id_str[1:]
         print str(o_key[0]) + ' ' + point_id_str
 
-print factorial_itr(5)
-print factorial(5)       
 data_dict = create_data_dict('in_data.txt')
 process_dict(data_dict)
